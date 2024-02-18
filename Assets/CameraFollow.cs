@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
+    [Header("Camera Settings")]
     [SerializeField] private float followSpeed = 0.1f;
     [SerializeField] private Vector3 offset;
     // Start is called before the first frame update
