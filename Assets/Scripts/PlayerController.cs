@@ -89,13 +89,13 @@ public class PlayerController : MonoBehaviour
         // Jump when grounded
         if (Input.GetButtonDown("Jump") && Grounded())
         {
-            player.velocity = new Vector3(player.velocity.x, jumpForce);
+            player.velocity = new Vector2(player.velocity.x, jumpForce);
         }
 
         // Half vertical velocity when jump button is released
         if (Input.GetButtonUp("Jump") && player.velocity.y > 0)
         {
-            player.velocity = new Vector3(player.velocity.x, player.velocity.y * 0.5f);
+            player.velocity = new Vector2(player.velocity.x, player.velocity.y * 0.5f);
         }
 
         animator.SetBool("Jumping", !Grounded());
