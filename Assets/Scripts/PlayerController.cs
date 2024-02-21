@@ -27,6 +27,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float dashSpeed;
     [SerializeField] private float dashTime;
     [SerializeField] private float dashCooldown;
+    [SerializeField] GameObject dashEffect;
     PlayerStateList playerState;
     private Rigidbody2D player;
     private float xAxis;
@@ -113,6 +114,7 @@ public class PlayerController : MonoBehaviour
         animator.SetTrigger("Dashing");
         player.gravityScale = 0;
         player.velocity = new Vector2(transform.localScale.x * dashSpeed, 0);
+        if (Grounded()) Instantiate(dashEffect, transform);
         yield return new WaitForSeconds(dashTime);
         player.gravityScale = gravity;
         playerState.dashing = false;
