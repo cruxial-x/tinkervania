@@ -12,8 +12,8 @@ public class PlayerController : MonoBehaviour
     private int jumpBufferCounter = 0;
     [SerializeField] private int jumpBufferFrames;
     // Coyote time is the time after the player has left the ground that they can still jump
-    private int coyoteTimeCounter = 0;
-    [SerializeField] private int coyoteTimeFrames;
+    private float coyoteTimeCounter = 0;
+    [SerializeField] private float coyoteTime;
 
     [Header("Ground Check Settings")]
     [SerializeField] private Transform groundCheckPoint;
@@ -121,11 +121,11 @@ public class PlayerController : MonoBehaviour
         if (Grounded())
         {
             playerState.jumping = false;
-            coyoteTimeCounter = coyoteTimeFrames;
+            coyoteTimeCounter = coyoteTime;
         }
         else
         {
-            coyoteTimeCounter--;
+            coyoteTimeCounter -= Time.deltaTime;
         }
 
         if(Input.GetButtonDown("Jump"))
