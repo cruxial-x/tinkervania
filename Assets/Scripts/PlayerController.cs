@@ -14,6 +14,8 @@ public class PlayerController : MonoBehaviour
     // Coyote time is the time after the player has left the ground that they can still jump
     private float coyoteTimeCounter = 0;
     [SerializeField] private float coyoteTime;
+    private int airJumpCounter = 0;
+    [SerializeField] private int maxAirJumps;
 
     [Header("Ground Check Settings")]
     [SerializeField] private Transform groundCheckPoint;
@@ -104,6 +106,12 @@ public class PlayerController : MonoBehaviour
                 player.velocity = new Vector2(player.velocity.x, jumpForce);
                 playerState.jumping = true;
             }
+            else if (!Grounded() && airJumpCounter < maxAirJumps && Input.GetButtonDown("Jump"))
+            {
+                player.velocity = new Vector2(player.velocity.x, jumpForce);
+                playerState.jumping = true;
+                airJumpCounter++;
+            }
         }
 
         // Half vertical velocity when jump button is released
@@ -122,6 +130,7 @@ public class PlayerController : MonoBehaviour
         {
             playerState.jumping = false;
             coyoteTimeCounter = coyoteTime;
+            airJumpCounter = 0;
         }
         else
         {
