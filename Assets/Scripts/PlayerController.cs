@@ -11,6 +11,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField]private float jumpForce = 30f;
     private int jumpBufferCounter = 0;
     [SerializeField] private int jumpBufferFrames;
+    // Coyote time is the time after the player has left the ground that they can still jump
+    private int coyoteTimeCounter = 0;
+    [SerializeField] private int coyoteTimeFrames;
+
+    [Header("Ground Check Settings")]
     [SerializeField] private Transform groundCheckPoint;
     [SerializeField] private float groundCheckY = 0.2f;
     [SerializeField] private float groundCheckX = 0.5f;
@@ -94,7 +99,7 @@ public class PlayerController : MonoBehaviour
     {
         if(!playerState.jumping){
             // Jump when grounded
-            if (jumpBufferCounter > 0 && Grounded())
+            if (jumpBufferCounter > 0 && coyoteTimeCounter > 0)
             {
                 player.velocity = new Vector2(player.velocity.x, jumpForce);
                 playerState.jumping = true;
@@ -116,6 +121,11 @@ public class PlayerController : MonoBehaviour
         if (Grounded())
         {
             playerState.jumping = false;
+            coyoteTimeCounter = coyoteTimeFrames;
+        }
+        else
+        {
+            coyoteTimeCounter--;
         }
 
         if(Input.GetButtonDown("Jump"))
