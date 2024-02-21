@@ -8,11 +8,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField]private float walkSpeed = 1;
 
     [Header("Jump Settings")]
-    [SerializeField]private float jumpForce = 30;
+    [SerializeField]private float jumpForce = 30f;
+    private int jumpBufferCounter = 0;
+    [SerializeField] private int jumpBufferFrames;
     [SerializeField] private Transform groundCheckPoint;
     [SerializeField] private float groundCheckY = 0.2f;
     [SerializeField] private float groundCheckX = 0.5f;
     [SerializeField] private LayerMask whatIsGround;
+
+    PlayerStateList playerState;
 
     private Rigidbody2D player;
     private float xAxis;
@@ -36,6 +40,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         player = GetComponent<Rigidbody2D>();
+        playerState = GetComponent<PlayerStateList>();
         animator = GetComponent<Animator>();
     }
 
@@ -43,9 +48,10 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         GetInputs();
+        UpdateJumpingState();
+        Flip();
         Move();
         Jump();
-        Flip();
     }
 
     void GetInputs()
@@ -86,18 +92,39 @@ public class PlayerController : MonoBehaviour
 
     void Jump()
     {
-        // Jump when grounded
-        if (Input.GetButtonDown("Jump") && Grounded())
-        {
-            player.velocity = new Vector2(player.velocity.x, jumpForce);
+        if(!playerState.jumping){
+            // Jump when grounded
+            if (jumpBufferCounter > 0 && Grounded())
+            {
+                player.velocity = new Vector2(player.velocity.x, jumpForce);
+                playerState.jumping = true;
+            }
         }
 
         // Half vertical velocity when jump button is released
         if (Input.GetButtonUp("Jump") && player.velocity.y > 0)
         {
             player.velocity = new Vector2(player.velocity.x, player.velocity.y * 0.5f);
+            playerState.jumping = false;
         }
 
         animator.SetBool("Jumping", !Grounded());
+    }
+    
+    void UpdateJumpingState()
+    {
+        if (Grounded())
+        {
+            playerState.jumping = false;
+        }
+
+        if(Input.GetButtonDown("Jump"))
+        {
+            jumpBufferCounter = jumpBufferFrames;
+        }
+        else
+        {
+            jumpBufferCounter--;
+        }
     }
 }
