@@ -45,6 +45,13 @@ public class PlayerController : MonoBehaviour
     bool attack = false;
     float timeBetweenAttack, timeSinceAttack;
 
+    [Header("Recoil")]
+    [SerializeField] int recoilXSteps = 5;
+    [SerializeField] int recoilYSteps = 5;
+    [SerializeField] float recoilXSpeed = 100;
+    [SerializeField] float recoilYSpeed = 100;
+    int stepsXRecoiled, stepsYRecoiled;
+
     public static PlayerController Instance;
 
     private void Awake()
@@ -80,6 +87,11 @@ public class PlayerController : MonoBehaviour
         StartDash();
         Attack();
     }
+    private void FixedUpdate()
+    {
+        if (playerState.dashing) return;
+        Recoil();
+    }
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
@@ -99,10 +111,12 @@ public class PlayerController : MonoBehaviour
         if (xAxis > 0)
         {
             transform.localScale = new Vector2(1, transform.localScale.y);
+            playerState.lookingRight = true;
         }
         if (xAxis < 0)
         {
             transform.localScale = new Vector2(-1, transform.localScale.y);
+            playerState.lookingRight = false;
         }
     }
 
@@ -150,33 +164,33 @@ public class PlayerController : MonoBehaviour
 
             if(yAxis == 0 || yAxis < 0 && Grounded())
             {
-                Hit(SideAttackTransform, SideAttackArea);
+                Hit(SideAttackTransform, SideAttackArea, ref playerState.recoilingX, recoilXSpeed);
                 Instantiate(slashEffect, SideAttackTransform);
             }
             else if(yAxis > 0)
             {
-                Hit(UpAttackTransform, UpAttackArea);
+                Hit(UpAttackTransform, UpAttackArea, ref playerState.recoilingY, recoilYSpeed);
                 SlshEffectAtAngle(slashEffect, 80, UpAttackTransform);
             }
             else if(yAxis < 0 && !Grounded())
             {
-                Hit(DownAttackTransform, DownAttackArea);
+                Hit(DownAttackTransform, DownAttackArea, ref playerState.recoilingY, recoilYSpeed);
                 SlshEffectAtAngle(slashEffect, -90, DownAttackTransform);
             }
         }
     }
-    private void Hit(Transform _attackTransform, Vector2 _attackArea)
+    private void Hit(Transform _attackTransform, Vector2 _attackArea, ref bool _recoilDir, float _recoilStrength)
     {
         Collider2D[] hit = Physics2D.OverlapBoxAll(_attackTransform.position, _attackArea, 0, AttackableLayer);
         if(hit.Length > 0)
         {
-            Debug.Log("Hit");
+            _recoilDir = true;
         }
         for(int i = 0; i < hit.Length; i++)
         {
             if (hit[i].GetComponent<Enemy>() != null)
             {
-                hit[i].GetComponent<Enemy>().EnemyHit(1);
+                hit[i].GetComponent<Enemy>().EnemyHit(damage, (transform.position - hit[i].transform.position).normalized, _recoilStrength);
             }
         }
     }
@@ -185,6 +199,69 @@ public class PlayerController : MonoBehaviour
         _slashEffect = Instantiate(_slashEffect, _attackTransform);
         _slashEffect.transform.eulerAngles = new Vector3(0, 0, _effectAngle);
         _slashEffect.transform.localScale = new Vector2(transform.localScale.x, transform.localScale.y);
+    }
+    void Recoil()
+    {
+        if(playerState.recoilingX)
+        {
+            if(playerState.lookingRight)
+            {
+                player.velocity = new Vector2(-recoilXSpeed, 0);
+            }
+            else
+            {
+                player.velocity = new Vector2(recoilXSpeed, 0);
+            }
+        }
+        if(playerState.recoilingY)
+        {
+            player.gravityScale = 0;
+            if(yAxis < 0)
+            {
+                player.velocity = new Vector2(player.velocity.x, recoilYSpeed);
+            }
+            else
+            {
+                player.velocity = new Vector2(player.velocity.x, -recoilYSpeed);
+            }
+            airJumpCounter = 0;
+        }
+        else
+        {
+            player.gravityScale = gravity;
+        }
+
+        //stop recoil
+        if(playerState.recoilingX && stepsXRecoiled < recoilXSteps)
+        {
+            stepsXRecoiled++;
+        }
+        else
+        {
+            StopRecoilX();
+        }
+        if(playerState.recoilingY && stepsYRecoiled < recoilYSteps)
+        {
+            stepsYRecoiled++;
+        }
+        else
+        {
+            StopRecoilY();
+        }
+        if(Grounded())
+        {
+            StopRecoilY();
+        }
+    }
+    void StopRecoilX()
+    {
+        stepsXRecoiled = 0;
+        playerState.recoilingX = false;
+    }
+    void StopRecoilY()
+    {
+        stepsYRecoiled = 0;
+        playerState.recoilingY = false;
     }
     public bool Grounded()
     {

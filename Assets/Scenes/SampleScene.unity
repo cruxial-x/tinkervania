@@ -156,6 +156,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   health: 3
+  recoilLength: 0.5
+  recoilFactor: 5
+  isRecoiling: 0
 --- !u!50 &101304984
 Rigidbody2D:
   serializedVersion: 4
@@ -497,6 +500,11 @@ MonoBehaviour:
   AttackableLayer:
     serializedVersion: 2
     m_Bits: 64
+  slashEffect: {fileID: 8319510071030147515, guid: 57e21efe9a0f35945b91844b4f8d7638, type: 3}
+  recoilXSteps: 5
+  recoilYSteps: 5
+  recoilXSpeed: 100
+  recoilYSpeed: 100
 --- !u!95 &173993312
 Animator:
   serializedVersion: 5
@@ -532,6 +540,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jumping: 0
   dashing: 0
+  recoilingX: 0
+  recoilingY: 0
+  lookingRight: 0
 --- !u!1 &345767212
 GameObject:
   m_ObjectHideFlags: 0
