@@ -30,11 +30,20 @@ public class PlayerController : MonoBehaviour
     [SerializeField] GameObject dashEffect;
     PlayerStateList playerState;
     private Rigidbody2D player;
-    private float xAxis;
+    private float xAxis, yAxis;
     Animator animator;
     private bool canDash = true;
     private float gravity;
     private bool dashed;
+
+    [Header("Attack Settings")]
+    [SerializeField] float damage;
+    [SerializeField] Transform SideAttackTransform, UpAttackTransform, DownAttackTransform;
+    [SerializeField] Vector2 SideAttackArea, UpAttackArea, DownAttackArea;
+    [SerializeField] LayerMask AttackableLayer;
+    [SerializeField] GameObject slashEffect;
+    bool attack = false;
+    float timeBetweenAttack, timeSinceAttack;
 
     public static PlayerController Instance;
 
@@ -69,11 +78,21 @@ public class PlayerController : MonoBehaviour
         Move();
         Jump();
         StartDash();
+        Attack();
+    }
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireCube(SideAttackTransform.position, SideAttackArea);
+        Gizmos.DrawWireCube(UpAttackTransform.position, UpAttackArea);
+        Gizmos.DrawWireCube(DownAttackTransform.position, DownAttackArea);
     }
 
     void GetInputs()
     {
         xAxis = Input.GetAxis("Horizontal");
+        yAxis = Input.GetAxis("Vertical");
+        attack = Input.GetMouseButtonDown(0);
     }
     void Flip()
     {
@@ -121,7 +140,52 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
     }
+    void Attack()
+    {
+        timeSinceAttack += Time.deltaTime;
+        if(attack && timeSinceAttack >= timeBetweenAttack)
+        {
+            timeSinceAttack = 0;
+            animator.SetTrigger("Attacking");
 
+            if(yAxis == 0 || yAxis < 0 && Grounded())
+            {
+                Hit(SideAttackTransform, SideAttackArea);
+                Instantiate(slashEffect, SideAttackTransform);
+            }
+            else if(yAxis > 0)
+            {
+                Hit(UpAttackTransform, UpAttackArea);
+                SlshEffectAtAngle(slashEffect, 80, UpAttackTransform);
+            }
+            else if(yAxis < 0 && !Grounded())
+            {
+                Hit(DownAttackTransform, DownAttackArea);
+                SlshEffectAtAngle(slashEffect, -90, DownAttackTransform);
+            }
+        }
+    }
+    private void Hit(Transform _attackTransform, Vector2 _attackArea)
+    {
+        Collider2D[] hit = Physics2D.OverlapBoxAll(_attackTransform.position, _attackArea, 0, AttackableLayer);
+        if(hit.Length > 0)
+        {
+            Debug.Log("Hit");
+        }
+        for(int i = 0; i < hit.Length; i++)
+        {
+            if (hit[i].GetComponent<Enemy>() != null)
+            {
+                hit[i].GetComponent<Enemy>().EnemyHit(1);
+            }
+        }
+    }
+    void SlshEffectAtAngle(GameObject _slashEffect, int _effectAngle, Transform _attackTransform)
+    {
+        _slashEffect = Instantiate(_slashEffect, _attackTransform);
+        _slashEffect.transform.eulerAngles = new Vector3(0, 0, _effectAngle);
+        _slashEffect.transform.localScale = new Vector2(transform.localScale.x, transform.localScale.y);
+    }
     public bool Grounded()
     {
         if (Physics2D.Raycast(groundCheckPoint.position, Vector2.down, groundCheckY, whatIsGround) 
