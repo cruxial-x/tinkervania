@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField]private float jumpForce = 30f;
     private int jumpBufferCounter = 0;
     [SerializeField] private int jumpBufferFrames;
-    // Coyote time is the time after the player has left the ground that they can still jump
+    // Coyote time is the time after the playerRb has left the ground that they can still jump
     private float coyoteTimeCounter = 0;
     [SerializeField] private float coyoteTime;
     private int airJumpCounter = 0;
@@ -28,8 +28,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float dashTime;
     [SerializeField] private float dashCooldown;
     [SerializeField] GameObject dashEffect;
-    PlayerStateList playerState;
-    private Rigidbody2D player;
+    [HideInInspector] public PlayerStateList playerState;
+    private Rigidbody2D playerRb;
     private float xAxis, yAxis;
     Animator animator;
     private bool canDash = true;
@@ -54,6 +54,10 @@ public class PlayerController : MonoBehaviour
 
     public static PlayerController Instance;
 
+    [Header("Health Settings")]
+    public int health;
+    public int maxHealth;
+
     private void Awake()
     {
         if(Instance != null && Instance != this)
@@ -69,10 +73,11 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        player = GetComponent<Rigidbody2D>();
+        playerRb = GetComponent<Rigidbody2D>();
         playerState = GetComponent<PlayerStateList>();
         animator = GetComponent<Animator>();
-        gravity = player.gravityScale;
+        gravity = playerRb.gravityScale;
+        health = maxHealth;
     }
 
     // Update is called once per frame
@@ -122,7 +127,7 @@ public class PlayerController : MonoBehaviour
 
     private void Move()
     {
-        player.velocity = new Vector2(xAxis * walkSpeed, player.velocity.y);
+        playerRb.velocity = new Vector2(xAxis * walkSpeed, playerRb.velocity.y);
         animator.SetBool("Walking", xAxis != 0 && Grounded());
     }
 
@@ -145,11 +150,11 @@ public class PlayerController : MonoBehaviour
         canDash = false;
         playerState.dashing = true;
         animator.SetTrigger("Dashing");
-        player.gravityScale = 0;
-        player.velocity = new Vector2(transform.localScale.x * dashSpeed, 0);
+        playerRb.gravityScale = 0;
+        playerRb.velocity = new Vector2(transform.localScale.x * dashSpeed, 0);
         if (Grounded()) Instantiate(dashEffect, transform);
         yield return new WaitForSeconds(dashTime);
-        player.gravityScale = gravity;
+        playerRb.gravityScale = gravity;
         playerState.dashing = false;
         yield return new WaitForSeconds(dashCooldown);
         canDash = true;
@@ -206,29 +211,29 @@ public class PlayerController : MonoBehaviour
         {
             if(playerState.lookingRight)
             {
-                player.velocity = new Vector2(-recoilXSpeed, 0);
+                playerRb.velocity = new Vector2(-recoilXSpeed, 0);
             }
             else
             {
-                player.velocity = new Vector2(recoilXSpeed, 0);
+                playerRb.velocity = new Vector2(recoilXSpeed, 0);
             }
         }
         if(playerState.recoilingY)
         {
-            player.gravityScale = 0;
+            playerRb.gravityScale = 0;
             if(yAxis < 0)
             {
-                player.velocity = new Vector2(player.velocity.x, recoilYSpeed);
+                playerRb.velocity = new Vector2(playerRb.velocity.x, recoilYSpeed);
             }
             else
             {
-                player.velocity = new Vector2(player.velocity.x, -recoilYSpeed);
+                playerRb.velocity = new Vector2(playerRb.velocity.x, -recoilYSpeed);
             }
             airJumpCounter = 0;
         }
         else
         {
-            player.gravityScale = gravity;
+            playerRb.gravityScale = gravity;
         }
 
         //stop recoil
@@ -263,6 +268,23 @@ public class PlayerController : MonoBehaviour
         stepsYRecoiled = 0;
         playerState.recoilingY = false;
     }
+    public void TakeDamage(float _damage)
+    {
+        health -= Mathf.RoundToInt(_damage);
+        StartCoroutine(StopTakingDamage());
+    }
+    IEnumerator StopTakingDamage()
+    {
+        playerState.invincible = true;
+        animator.SetTrigger("takeDamage");
+        ClampHealth();
+        yield return new WaitForSeconds(1f);
+        playerState.invincible = false;
+    }
+    void ClampHealth()
+    {
+        health = Mathf.Clamp(health, 0, maxHealth);
+    }
     public bool Grounded()
     {
         if (Physics2D.Raycast(groundCheckPoint.position, Vector2.down, groundCheckY, whatIsGround) 
@@ -283,21 +305,21 @@ public class PlayerController : MonoBehaviour
             // Jump when grounded
             if (jumpBufferCounter > 0 && coyoteTimeCounter > 0)
             {
-                player.velocity = new Vector2(player.velocity.x, jumpForce);
+                playerRb.velocity = new Vector2(playerRb.velocity.x, jumpForce);
                 playerState.jumping = true;
             }
             else if (!Grounded() && airJumpCounter < maxAirJumps && Input.GetButtonDown("Jump"))
             {
-                player.velocity = new Vector2(player.velocity.x, jumpForce);
+                playerRb.velocity = new Vector2(playerRb.velocity.x, jumpForce);
                 playerState.jumping = true;
                 airJumpCounter++;
             }
         }
 
         // Half vertical velocity when jump button is released
-        if (Input.GetButtonUp("Jump") && player.velocity.y > 0)
+        if (Input.GetButtonUp("Jump") && playerRb.velocity.y > 0)
         {
-            player.velocity = new Vector2(player.velocity.x, player.velocity.y * 0.5f);
+            playerRb.velocity = new Vector2(playerRb.velocity.x, playerRb.velocity.y * 0.5f);
             playerState.jumping = false;
         }
 
