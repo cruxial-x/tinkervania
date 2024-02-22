@@ -109,7 +109,7 @@ public class PlayerController : MonoBehaviour
     {
         xAxis = Input.GetAxis("Horizontal");
         yAxis = Input.GetAxis("Vertical");
-        attack = Input.GetMouseButtonDown(0);
+        attack = Input.GetButtonDown("Attack");
     }
     void Flip()
     {
